@@ -20,8 +20,8 @@ public class UtilisateurController {
     }
 
     @PostMapping
-    public ResponseEntity<Utilisateur> createUtilisateur(@RequestBody Utilisateur utilisateur) {
-        Utilisateur created = utilisateurService.createOrUpdateUtilisateur(utilisateur);
+    public ResponseEntity<Utilisateur> createUtilisateur(@RequestBody Utilisateur utilisateur, @RequestParam List<String> roleNames) {
+        Utilisateur created = utilisateurService.createOrUpdateUtilisateur(utilisateur, roleNames);
         return ResponseEntity.ok(created);
     }
 
@@ -38,11 +38,11 @@ public class UtilisateurController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Utilisateur> updateUtilisateur(@PathVariable Integer id, @RequestBody Utilisateur utilisateur) {
+    public ResponseEntity<Utilisateur> updateUtilisateur(@PathVariable Integer id, @RequestBody Utilisateur utilisateur, @RequestParam List<String> roleNames) {
         return utilisateurService.getUtilisateurById(id)
                 .map(existingUser -> {
                     utilisateur.setUserId(existingUser.getUserId());
-                    Utilisateur updated = utilisateurService.createOrUpdateUtilisateur(utilisateur);
+                    Utilisateur updated = utilisateurService.createOrUpdateUtilisateur(utilisateur, roleNames);
                     return ResponseEntity.ok(updated);
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -53,4 +53,22 @@ public class UtilisateurController {
         utilisateurService.deleteUtilisateur(id);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/{id}/roles")
+    public ResponseEntity<?> addRolesToUser(@PathVariable Integer id, @RequestBody List<String> roles) {
+        try {
+            Utilisateur utilisateur = utilisateurService.getUtilisateurById(id)
+                    .orElseThrow(() -> new RuntimeException("User not found: " + id));
+
+            for (String roleName : roles) {
+                utilisateurService.addRoleToUser(utilisateur, roleName);
+            }
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
+
 }
